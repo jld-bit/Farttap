@@ -5,32 +5,32 @@ final class ShakeManager: ObservableObject {
     static let shared = ShakeManager()
 
     private let motionManager = CMMotionManager()
-    private var lastShakeTime: Date = .distantPast
+    private var lastShakeDate: Date = .distantPast
 
-    // Callback assigned by views to react to shake events.
+    // Assign this closure from the view that wants shake events.
     var onShakeDetected: (() -> Void)?
 
     private init() {}
 
     func startDetection() {
         guard motionManager.isAccelerometerAvailable else {
-            print("⚠️ Accelerometer unavailable on this device/simulator")
+            print("Accelerometer is unavailable (simulator may not support shake).")
             return
         }
 
-        motionManager.accelerometerUpdateInterval = 0.1
+        motionManager.accelerometerUpdateInterval = 0.12
         motionManager.startAccelerometerUpdates(to: .main) { [weak self] data, _ in
-            guard let self, let data else { return }
+            guard let self, let acceleration = data?.acceleration else { return }
 
-            let x = data.acceleration.x
-            let y = data.acceleration.y
-            let z = data.acceleration.z
-            let magnitude = sqrt(x * x + y * y + z * z)
+            let strength = sqrt(
+                acceleration.x * acceleration.x +
+                acceleration.y * acceleration.y +
+                acceleration.z * acceleration.z
+            )
 
-            // Simple shake threshold with cooldown to prevent rapid repeats.
             let now = Date()
-            if magnitude > 2.3 && now.timeIntervalSince(lastShakeTime) > 1.0 {
-                lastShakeTime = now
+            if strength > 2.3, now.timeIntervalSince(lastShakeDate) > 1.0 {
+                lastShakeDate = now
                 onShakeDetected?()
             }
         }

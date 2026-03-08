@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct ContentView: View {
-    // Tracks first-launch disclaimer state.
+    // First-launch flag for showing disclaimer.
     @AppStorage("hasAcceptedDisclaimer") private var hasAcceptedDisclaimer = false
 
     var body: some View {
         Group {
             if hasAcceptedDisclaimer {
-                MainTabView()
+                AppTabsView()
             } else {
                 DisclaimerView {
                     hasAcceptedDisclaimer = true
@@ -17,10 +17,10 @@ struct ContentView: View {
     }
 }
 
-struct MainTabView: View {
+struct AppTabsView: View {
     var body: some View {
         TabView {
-            FartBoardView()
+            SoundBoardView()
                 .tabItem {
                     Label("Board", systemImage: "square.grid.2x2.fill")
                 }

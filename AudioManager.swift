@@ -9,57 +9,62 @@ final class AudioManager: ObservableObject {
 
     private init() {}
 
-    // Place sound files in Xcode inside: Project Navigator > FartTap > Sounds/
-    // Ensure each file has "Target Membership" enabled for your app target.
-    // Example placeholder files expected by this app:
-    // tiny_pop.mp3, wet_squeak.mp3, thunder_rip.mp3, sneaky_puff.mp3, tuba_blast.mp3,
-    // long_creak.mp3, bubble_trouble.mp3, chair_shaker.mp3, silly_squeal.mp3,
-    // quick_burst.mp3, echo_fart.mp3, mega_boom.mp3
+    // Place sound files inside Xcode project (example folder: Sounds).
+    // Ensure each file has target membership enabled.
+    // Example file names:
+    // tiny_pop.mp3, wet_squeak.mp3, thunder_rip.mp3, sneaky_puff.mp3,
+    // tuba_blast.mp3, long_creak.mp3, bubble_trouble.mp3, chair_shaker.mp3,
+    // silly_squeal.mp3, quick_burst.mp3, echo_fart.mp3, mega_boom.mp3
     func play(soundFileName: String) {
-        stop()
+        stopCurrentPlaybackOnly()
 
-        guard let url = Bundle.main.url(forResource: soundFileName, withExtension: nil) else {
-            print("⚠️ Missing sound file: \(soundFileName)")
+        guard let fileURL = Bundle.main.url(forResource: soundFileName, withExtension: nil) else {
+            print("Missing sound file: \(soundFileName)")
             return
         }
 
         do {
-            player = try AVAudioPlayer(contentsOf: url)
+            player = try AVAudioPlayer(contentsOf: fileURL)
             player?.prepareToPlay()
             player?.play()
         } catch {
-            print("⚠️ Failed to play \(soundFileName): \(error.localizedDescription)")
+            print("Could not play sound: \(error.localizedDescription)")
         }
     }
 
     func playRandom(from sounds: [FartSound]) {
-        guard let random = sounds.randomElement() else { return }
-        play(soundFileName: random.fileName)
+        guard let randomSound = sounds.randomElement() else { return }
+        play(soundFileName: randomSound.fileName)
     }
 
-    // Schedules a delayed prank playback and returns the selected sound label.
+    // Timer prank mode.
     @discardableResult
     func schedulePrank(after delay: TimeInterval, sounds: [FartSound]) -> String? {
         cancelScheduledPrank()
 
-        guard let random = sounds.randomElement() else { return nil }
-
+        guard let randomSound = sounds.randomElement() else { return nil }
         let workItem = DispatchWorkItem { [weak self] in
-            self?.play(soundFileName: random.fileName)
+            self?.play(soundFileName: randomSound.fileName)
         }
+
         scheduledWorkItem = workItem
-
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
-        return random.name
-    }
 
-    func cancelScheduledPrank() {
-        scheduledWorkItem?.cancel()
-        scheduledWorkItem = nil
+        return randomSound.name
     }
 
     func stop() {
         cancelScheduledPrank()
+        stopCurrentPlaybackOnly()
+    }
+
+    private func cancelScheduledPrank() {
+        scheduledWorkItem?.cancel()
+        scheduledWorkItem = nil
+    }
+
+    private func stopCurrentPlaybackOnly() {
         player?.stop()
+        player = nil
     }
 }
